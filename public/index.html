@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic AI</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#09090b; color:#e4e4e7; font-family:'Inter',sans-serif; min-height:100vh; }
+        .container { max-width:800px; margin:0 auto; padding:20px; }
+        .header { text-align:center; padding:40px 20px; }
+        .header h1 { font-size:2.5rem; background:linear-gradient(135deg,#a78bfa,#06b6d4); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .header p { color:#71717a; margin-top:8px; }
+        .chat-box { background:#18181b; border:1px solid #27272a; border-radius:16px; padding:20px; }
+        #messages { max-height:400px; overflow-y:auto; margin-bottom:16px; }
+        .msg { margin-bottom:12px; padding:12px; border-radius:12px; white-space:pre-wrap; }
+        .msg.user { background:#06b6d4; color:white; margin-left:50px; }
+        .msg.ai { background:#27272a; color:#e4e4e7; margin-right:50px; }
+        .input-row { display:flex; gap:10px; flex-wrap:wrap; }
+        textarea { flex:1; min-width:200px; background:#27272a; border:1px solid #3f3f46; color:white; border-radius:12px; padding:12px; font-family:inherit; resize:none; }
+        textarea:focus { outline:none; border-color:#06b6d4; }
+        select { background:#27272a; border:1px solid #3f3f46; color:white; border-radius:12px; padding:12px; }
+        button { background:#06b6d4; color:white; border:none; border-radius:12px; padding:12px 24px; font-weight:600; cursor:pointer; }
+        button:hover { background:#0891b2; }
+        button:disabled { opacity:0.5; cursor:not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌌 Cosmic AI</h1>
+            <p>Powered by Claude Web Session</p>
+        </div>
+        <div class="chat-box">
+            <div id="messages"></div>
+            <div class="input-row">
+                <select id="model">
+                    <option value="claude-sonnet-5">Claude Sonnet 5</option>
+                    <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                    <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+                </select>
+                <textarea id="prompt" rows="2" placeholder="Tulis pesan..."></textarea>
+                <button id="send" onclick="sendMessage()">Kirim</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const model = document.getElementById('model').value;
+            if (!prompt) return;
+
+            const messages = document.getElementById('messages');
+            messages.innerHTML += `<div class="msg user">${prompt}</div>`;
+
+            const btn = document.getElementById('send');
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, model }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    messages.innerHTML += `<div class="msg ai">${data.response}</div>`;
+                } else {
+                    messages.innerHTML += `<div class="msg ai">Error: ${data.error}</div>`;
+                }
+            } catch (err) {
+                messages.innerHTML += `<div class="msg ai">Gagal: ${err.message}</div>`;
+            }
+
+            document.getElementById('prompt').value = '';
+            btn.disabled = false;
+            btn.textContent = 'Kirim';
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        document.getElementById('prompt').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
